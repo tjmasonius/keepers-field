@@ -1,0 +1,24 @@
+# Backup: catch Completed visits that Field failed to Slack-ping.
+# Calls keepers-field /api/cron/complete-notify every 10 minutes.
+# Requires repo secret CRON_SECRET (same value as Vercel CRON_SECRET).
+name: complete-notify-cron
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Field complete-notify backup
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "Missing repo secret CRON_SECRET" >&2
+            exit 1
+          fi
+          curl -fsS -X GET \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "https://keepers-field.vercel.app/api/cron/complete-notify"
